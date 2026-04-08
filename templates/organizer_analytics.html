@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Eventzo – Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --stone: #c8bfb0; --dark-bg: #0d0d0d; --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.18); --text-muted: rgba(255,255,255,0.45);
+    --text-secondary: rgba(255,255,255,0.65); --accent-warm: #d4a96a;
+    --glass: rgba(255,255,255,0.04); --glass-border: rgba(255,255,255,0.1);
+    --success: #5a8a6a;
+  }
+  html, body { min-height: 100vh; font-family: 'DM Sans', sans-serif; background: var(--dark-bg); color: white; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 18px 48px; background: rgba(13,13,13,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+  .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; letter-spacing: 0.04em; color: white; text-decoration: none; }
+  .nav-logo span { color: var(--stone); }
+  .nav-right { display: flex; align-items: center; gap: 32px; }
+  .nav-greeting { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.08em; }
+  .nav-greeting strong { color: var(--stone); font-weight: 500; }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.2s; }
+  .nav-links a:hover, .nav-links a.active { color: white; }
+  .btn-logout { padding: 8px 22px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; text-decoration: none; transition: all 0.25s; }
+  .btn-logout:hover { border-color: var(--border-hover); color: white; }
+
+  .main { padding-top: 80px; min-height: 100vh; }
+
+  .page-header { padding: 48px 56px 36px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, rgba(200,191,176,0.04) 0%, transparent 60%); }
+  .eyebrow { font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--stone); margin-bottom: 8px; }
+  .page-header h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 300; line-height: 1.1; }
+  .page-header h1 em { font-style: italic; color: var(--stone); }
+
+  /* KPI row */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
+  .kpi-card { padding: 32px 36px; border-right: 1px solid var(--border); transition: background 0.25s; position: relative; overflow: hidden; }
+  .kpi-card:last-child { border-right: none; }
+  .kpi-card:hover { background: var(--glass); }
+  .kpi-label { font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .kpi-value { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 300; color: white; line-height: 1; margin-bottom: 8px; }
+  .kpi-sub { font-size: 0.72rem; color: var(--text-muted); }
+  .kpi-trend { font-size: 0.72rem; color: var(--success); }
+  .kpi-accent { position: absolute; bottom: 0; left: 0; height: 2px; background: linear-gradient(to right, var(--stone), transparent); width: 60%; }
+
+  /* Main grid */
+  .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+  .analytics-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+
+  .chart-card { background: var(--dark-bg); padding: 36px 40px; }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-title { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 400; color: white; margin-bottom: 6px; }
+  .chart-sub { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 28px; letter-spacing: 0.06em; }
+
+  /* Bar chart */
+  .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 140px; margin-bottom: 12px; }
+  .bc-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .bc-bar { width: 100%; border-radius: 2px 2px 0 0; transition: opacity 0.2s; position: relative; }
+  .bc-bar:hover { opacity: 0.8; }
+  .bc-bar::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: var(--text-muted); white-space: nowrap; }
+  .bc-label { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+
+  /* Donut chart (CSS) */
+  .donut-wrap { display: flex; align-items: center; gap: 36px; }
+  .donut { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+  .donut svg { transform: rotate(-90deg); }
+  .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .donut-center-value { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; color: white; line-height: 1; }
+  .donut-center-label { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-top: 2px; }
+  .donut-legend { display: flex; flex-direction: column; gap: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { font-size: 0.78rem; color: var(--text-secondary); }
+  .legend-val { font-size: 0.78rem; color: var(--text-muted); margin-left: auto; padding-left: 16px; }
+
+  /* Top events table */
+  .top-events { display: flex; flex-direction: column; gap: 10px; }
+  .top-event-row { display: flex; align-items: center; gap: 16px; padding: 14px 18px; background: var(--glass); border: 1px solid var(--border); border-radius: 2px; transition: all 0.2s; }
+  .top-event-row:hover { border-color: var(--border-hover); background: rgba(255,255,255,0.06); }
+  .top-rank { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 300; color: var(--stone); min-width: 28px; }
+  .top-info { flex: 1; }
+  .top-title { font-size: 0.88rem; color: white; margin-bottom: 2px; }
+  .top-meta { font-size: 0.7rem; color: var(--text-muted); }
+  .top-count { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 300; color: var(--stone); }
+  .top-sub { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+
+  /* Fill rate bars */
+  .fill-bars { display: flex; flex-direction: column; gap: 16px; }
+  .fill-row { display: flex; flex-direction: column; gap: 6px; }
+  .fill-label-row { display: flex; justify-content: space-between; align-items: baseline; }
+  .fill-name { font-size: 0.82rem; color: var(--text-secondary); }
+  .fill-pct { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--stone); }
+  .fill-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .fill-fill { height: 100%; border-radius: 2px; background: linear-gradient(to right, var(--stone), var(--accent-warm)); transition: width 0.8s cubic-bezier(0.16,1,.3,1); }
+
+  /* Mode split */
+  .mode-split { display: flex; gap: 16px; }
+  .mode-card { flex: 1; padding: 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 2px; text-align: center; }
+  .mode-icon { font-size: 1.6rem; margin-bottom: 10px; }
+  .mode-label { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .mode-count { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; color: white; }
+
+  /* Insights */
+  .insights-list { display: flex; flex-direction: column; gap: 12px; }
+  .insight-item { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; background: var(--glass); border: 1px solid var(--border); border-radius: 2px; }
+  .insight-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+  .insight-text { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.55; }
+  .insight-text strong { color: white; font-weight: 500; }
+
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    .page-header { padding: 36px 24px; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .analytics-grid, .analytics-grid-3 { grid-template-columns: 1fr; }
+    .chart-card { padding: 28px 24px; }
+    .donut-wrap { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">Event<span>zo</span></a>
+  <div class="nav-right">
+    <div class="nav-greeting">Welcome, <strong>{{ organizer_name }}</strong></div>
+    <ul class="nav-links">
+      <li><a href="/dashboard/organizer">Dashboard</a></li>
+      <li><a href="/organizer/events">Events</a></li>
+      <li><a href="/organizer/analytics" class="active">Analytics</a></li>
+    </ul>
+    <a class="btn-logout" href="/logout">Sign out</a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-header">
+    <p class="eyebrow">Organiser Analytics</p>
+    <h1>Your event<br><em>performance at a glance</em></h1>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Events</div>
+      <div class="kpi-value">{{ total_events }}</div>
+      <div class="kpi-sub">All time</div>
+      <div class="kpi-accent"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Registrations</div>
+      <div class="kpi-value">{{ total_regs }}</div>
+      <div class="kpi-trend">↑ Across all events</div>
+      <div class="kpi-accent"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg. Fill Rate</div>
+      <div class="kpi-value" id="kpi-fill">0%</div>
+      <div class="kpi-sub">Seats filled per event</div>
+      <div class="kpi-accent"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active Right Now</div>
+      <div class="kpi-value">{{ active_count }}</div>
+      <div class="kpi-sub">Open for registration</div>
+      <div class="kpi-accent"></div>
+    </div>
+  </div>
+
+  <!-- Row 1: Registrations bar chart + Event type donut -->
+  <div class="analytics-grid">
+
+    <div class="chart-card">
+      <div class="chart-title">Registrations by Event</div>
+      <div class="chart-sub">How many people signed up for each event</div>
+      <div class="bar-chart" id="reg-bar-chart"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Event Type Breakdown</div>
+      <div class="chart-sub">Distribution across your hosted events</div>
+      <div class="donut-wrap">
+        <div class="donut">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="52" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="18"/>
+            <circle id="donut-tech"    cx="70" cy="70" r="52" fill="none" stroke="#c8bfb0" stroke-width="18" stroke-dasharray="0 327" stroke-linecap="round"/>
+            <circle id="donut-nontech" cx="70" cy="70" r="52" fill="none" stroke="#d4a96a" stroke-width="18" stroke-dasharray="0 327" stroke-linecap="round"/>
+            <circle id="donut-cultural"cx="70" cy="70" r="52" fill="none" stroke="#7a8a9a" stroke-width="18" stroke-dasharray="0 327" stroke-linecap="round"/>
+          </svg>
+          <div class="donut-center">
+            <div class="donut-center-value">{{ total_events }}</div>
+            <div class="donut-center-label">Events</div>
+          </div>
+        </div>
+        <div class="donut-legend" id="donut-legend"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 2: Fill rates + Top events + Mode split -->
+  <div class="analytics-grid-3">
+
+    <div class="chart-card">
+      <div class="chart-title">Fill Rates</div>
+      <div class="chart-sub">% of seats filled per event</div>
+      <div class="fill-bars" id="fill-bars"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Top Events</div>
+      <div class="chart-sub">By number of registrations</div>
+      <div class="top-events" id="top-events"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Event Mode Split</div>
+      <div class="chart-sub">Online vs Offline distribution</div>
+      <div class="mode-split" id="mode-split" style="margin-bottom:28px"></div>
+      <div class="chart-title" style="font-size:1rem;margin-bottom:6px">Participation Type</div>
+      <div class="chart-sub" style="margin-bottom:16px">Individual vs Team</div>
+      <div class="mode-split" id="type-split"></div>
+    </div>
+
+  </div>
+
+  <!-- Row 3: Insights -->
+  <div class="analytics-grid">
+    <div class="chart-card full">
+      <div class="chart-title">Insights</div>
+      <div class="chart-sub">Automatically generated observations from your event data</div>
+      <div class="insights-list" id="insights-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── DATA FROM FLASK ───────────────────────────────────────────────────────
+  const events = {{ events | tojson }};
+
+  function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── REGISTRATIONS BAR CHART ───────────────────────────────────────────────
+  function buildBarChart() {
+    const wrap = document.getElementById('reg-bar-chart');
+    if (!events.length) { wrap.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem">No events yet.</p>'; return; }
+    const maxReg = Math.max(...events.map(e => e.registrations), 1);
+    wrap.innerHTML = events.map(ev => {
+      const pct = Math.max(4, Math.round((ev.registrations / maxReg) * 100));
+      return `
+        <div class="bc-bar-wrap">
+          <div class="bc-bar"
+               data-val="${ev.registrations}"
+               style="height:${pct}%; background:linear-gradient(to top, var(--stone), rgba(200,191,176,0.35));">
+          </div>
+          <span class="bc-label">${escHtml(ev.title.slice(0,8))}…</span>
+        </div>`;
+    }).join('');
+  }
+
+  // ── DONUT CHART ───────────────────────────────────────────────────────────
+  function buildDonut() {
+    const counts = { Technical: 0, 'Non-Technical': 0, Cultural: 0 };
+    events.forEach(e => { if (counts[e.type] !== undefined) counts[e.type]++; });
+    const total = events.length || 1;
+    const circumference = 2 * Math.PI * 52; // ~327
+
+    const colors   = { Technical: '#c8bfb0', 'Non-Technical': '#d4a96a', Cultural: '#7a8a9a' };
+    const ids      = { Technical: 'donut-tech', 'Non-Technical': 'donut-nontech', Cultural: 'donut-cultural' };
+    let offset = 0;
+
+    const legend = document.getElementById('donut-legend');
+    legend.innerHTML = '';
+
+    Object.entries(counts).forEach(([type, count]) => {
+      const pct  = count / total;
+      const dash = pct * circumference;
+      const el   = document.getElementById(ids[type]);
+      if (el) {
+        el.setAttribute('stroke-dasharray', `${dash} ${circumference - dash}`);
+        el.setAttribute('stroke-dashoffset', -offset);
+        offset += dash;
+      }
+      legend.innerHTML += `
+        <div class="legend-item">
+          <div class="legend-dot" style="background:${colors[type]}"></div>
+          <span class="legend-label">${type}</span>
+          <span class="legend-val">${count} (${Math.round(pct*100)}%)</span>
+        </div>`;
+    });
+  }
+
+  // ── FILL RATES ────────────────────────────────────────────────────────────
+  function buildFillRates() {
+    const wrap = document.getElementById('fill-bars');
+    if (!events.length) { wrap.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem">No events yet.</p>'; return; }
+    const totalFill = events.reduce((s, e) => s + (e.max_registrations ? e.registrations / e.max_registrations : 0), 0);
+    const avgFill   = Math.round((totalFill / events.length) * 100);
+    document.getElementById('kpi-fill').textContent = avgFill + '%';
+
+    wrap.innerHTML = events.map(ev => {
+      const pct = ev.max_registrations ? Math.min(100, Math.round((ev.registrations / ev.max_registrations) * 100)) : 0;
+      return `
+        <div class="fill-row">
+          <div class="fill-label-row">
+            <span class="fill-name">${escHtml(ev.title.length > 22 ? ev.title.slice(0,22)+'…' : ev.title)}</span>
+            <span class="fill-pct">${pct}%</span>
+          </div>
+          <div class="fill-bar"><div class="fill-fill" style="width:${pct}%"></div></div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── TOP EVENTS ────────────────────────────────────────────────────────────
+  function buildTopEvents() {
+    const wrap = document.getElementById('top-events');
+    if (!events.length) { wrap.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem">No events yet.</p>'; return; }
+    const sorted = [...events].sort((a,b) => b.registrations - a.registrations).slice(0, 5);
+    wrap.innerHTML = sorted.map((ev, i) => `
+      <div class="top-event-row">
+        <div class="top-rank">${i + 1}</div>
+        <div class="top-info">
+          <div class="top-title">${escHtml(ev.title)}</div>
+          <div class="top-meta">${escHtml(ev.type)} · ${escHtml(ev.mode)}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="top-count">${ev.registrations}</div>
+          <div class="top-sub">registered</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── MODE & TYPE SPLIT ─────────────────────────────────────────────────────
+  function buildSplits() {
+    const online  = events.filter(e => e.mode === 'Online').length;
+    const offline = events.length - online;
+    const indiv   = events.filter(e => e.participation_type === 'Individual').length;
+    const team    = events.length - indiv;
+
+    document.getElementById('mode-split').innerHTML = `
+      <div class="mode-card">
+        <div class="mode-icon">⚡</div>
+        <div class="mode-label">Online</div>
+        <div class="mode-count">${online}</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-icon">📍</div>
+        <div class="mode-label">Offline</div>
+        <div class="mode-count">${offline}</div>
+      </div>`;
+
+    document.getElementById('type-split').innerHTML = `
+      <div class="mode-card">
+        <div class="mode-icon">👤</div>
+        <div class="mode-label">Individual</div>
+        <div class="mode-count">${indiv}</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-icon">👥</div>
+        <div class="mode-label">Team</div>
+        <div class="mode-count">${team}</div>
+      </div>`;
+  }
+
+  // ── INSIGHTS ──────────────────────────────────────────────────────────────
+  function buildInsights() {
+    const wrap = document.getElementById('insights-list');
+    const insights = [];
+
+    if (!events.length) {
+      wrap.innerHTML = `<div class="insight-item"><div class="insight-icon">💡</div><div class="insight-text">Host your first event to start seeing insights here.</div></div>`;
+      return;
+    }
+
+    const totalReg  = events.reduce((s,e) => s + e.registrations, 0);
+    const avgFill   = events.reduce((s,e) => s + (e.max_registrations ? e.registrations/e.max_registrations : 0), 0) / events.length;
+    const topEvent  = [...events].sort((a,b) => b.registrations - a.registrations)[0];
+    const activeEvs = events.filter(e => e.status === 'active');
+    const techEvs   = events.filter(e => e.type === 'Technical').length;
+
+    insights.push({ icon:'📊', text: `You have hosted <strong>${events.length}</strong> event${events.length!==1?'s':''} with a total of <strong>${totalReg}</strong> registration${totalReg!==1?'s':''}.` });
+
+    if (topEvent) insights.push({ icon:'🏆', text: `Your most popular event is <strong>${escHtml(topEvent.title)}</strong> with <strong>${topEvent.registrations}</strong> registrations.` });
+
+    insights.push({ icon:'📈', text: `Your average seat fill rate is <strong>${Math.round(avgFill*100)}%</strong>. ${avgFill >= 0.7 ? 'Great demand for your events!' : 'Consider promoting your events to boost registrations.'}` });
+
+    if (activeEvs.length) insights.push({ icon:'🟢', text: `You currently have <strong>${activeEvs.length}</strong> active event${activeEvs.length!==1?'s':''} open for registration.` });
+
+    if (techEvs === events.length) insights.push({ icon:'💡', text: `All your events are Technical. Consider diversifying with Cultural or Non-Technical events to reach a broader audience.` });
+
+    const onlineRatio = events.filter(e => e.mode==='Online').length / events.length;
+    if (onlineRatio === 1) insights.push({ icon:'🌐', text: `All your events are online. Offline events can drive stronger community engagement and networking.` });
+    else if (onlineRatio === 0) insights.push({ icon:'📍', text: `All your events are offline. Adding online events can significantly increase your reach.` });
+
+    wrap.innerHTML = insights.map(i => `
+      <div class="insight-item">
+        <div class="insight-icon">${i.icon}</div>
+        <div class="insight-text">${i.text}</div>
+      </div>`).join('');
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────────────────
+  buildBarChart();
+  buildDonut();
+  buildFillRates();
+  buildTopEvents();
+  buildSplits();
+  buildInsights();
+</script>
+</body>
+</html>

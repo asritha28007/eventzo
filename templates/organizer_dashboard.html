@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Eventzo – Organiser Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --stone: #c8bfb0; --dark-bg: #0d0d0d; --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.18); --text-muted: rgba(255,255,255,0.45);
+    --text-secondary: rgba(255,255,255,0.65); --accent-warm: #d4a96a;
+    --glass: rgba(255,255,255,0.04); --glass-border: rgba(255,255,255,0.1);
+    --success: #5a8a6a;
+  }
+  html, body { min-height: 100vh; font-family: 'DM Sans', sans-serif; background: var(--dark-bg); color: white; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 18px 48px; background: rgba(13,13,13,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+  .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; letter-spacing: 0.04em; color: white; text-decoration: none; }
+  .nav-logo span { color: var(--stone); }
+  .nav-right { display: flex; align-items: center; gap: 32px; }
+  .nav-greeting { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.08em; }
+  .nav-greeting strong { color: var(--stone); font-weight: 500; }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.2s; }
+  .nav-links a:hover { color: white; }
+  .btn-logout { padding: 8px 22px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; text-decoration: none; transition: all 0.25s; }
+  .btn-logout:hover { border-color: var(--border-hover); color: white; }
+
+  .main { padding-top: 80px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  .dashboard-hero { padding: 56px 48px 40px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; background: linear-gradient(135deg, rgba(200,191,176,0.04) 0%, transparent 60%); }
+  .hero-text .eyebrow { font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--stone); margin-bottom: 10px; }
+  .hero-text h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 300; line-height: 1.1; }
+  .hero-text h1 em { font-style: italic; color: var(--stone); }
+  .org-badge { margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 2px; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.08em; }
+  .org-badge span { color: var(--stone); }
+  .btn-host { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; background: white; color: #0d0d0d; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; border-radius: 2px; transition: all 0.25s; white-space: nowrap; flex-shrink: 0; }
+  .btn-host:hover { background: var(--stone); transform: translateY(-2px); }
+
+  .analytics-row { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
+  .stat-card { padding: 32px 36px; border-right: 1px solid var(--border); transition: background 0.25s; }
+  .stat-card:last-child { border-right: none; }
+  .stat-card:hover { background: var(--glass); }
+  .stat-label { font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 2.6rem; font-weight: 300; color: white; line-height: 1; margin-bottom: 6px; }
+  .stat-sub { font-size: 0.72rem; color: var(--text-muted); }
+  .stat-change { font-size: 0.72rem; color: var(--success); }
+
+  .content-area { display: grid; grid-template-columns: 1fr 340px; flex: 1; }
+  .events-section { padding: 40px 48px; border-right: 1px solid var(--border); }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: white; }
+
+  .filter-tabs { display: flex; gap: 4px; }
+  .tab { padding: 6px 16px; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border: 1px solid transparent; background: transparent; cursor: pointer; border-radius: 2px; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .tab.active { color: white; border-color: var(--border); background: var(--glass); }
+  .tab:hover:not(.active) { color: var(--text-secondary); }
+
+  .events-list { display: flex; flex-direction: column; gap: 12px; }
+  .event-card { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 20px; padding: 20px 24px; background: var(--glass); border: 1px solid var(--border); border-radius: 3px; transition: all 0.25s; cursor: pointer; }
+  .event-card:hover { background: rgba(255,255,255,0.06); border-color: var(--border-hover); transform: translateX(4px); }
+  .event-date-block { text-align: center; min-width: 48px; }
+  .event-date-day { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; line-height: 1; color: var(--stone); }
+  .event-date-mon { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); }
+  .event-info .event-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 400; margin-bottom: 4px; }
+  .event-meta { display: flex; gap: 14px; align-items: center; }
+  .event-tag { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); padding: 2px 8px; border: 1px solid var(--border); border-radius: 1px; }
+  .event-mode { font-size: 0.72rem; color: var(--text-muted); }
+  .event-registrations { text-align: right; }
+  .reg-count { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 300; color: white; line-height: 1; }
+  .reg-label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+  .event-status { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; min-width: 90px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .status-active .status-dot { background: #5a8a6a; }
+  .status-upcoming .status-dot { background: var(--accent-warm); }
+  .status-closed .status-dot { background: #555; }
+  .status-text { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+  .btn-view-participants { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--stone); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; padding: 4px 0; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+  .btn-view-participants:hover { border-color: var(--stone); }
+
+  .empty-state { text-align: center; padding: 80px 40px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state p { font-size: 0.85rem; line-height: 1.7; }
+
+  .side-panel { padding: 40px 36px; display: flex; flex-direction: column; gap: 36px; }
+  .panel-section h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 400; margin-bottom: 20px; color: white; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 80px; margin-bottom: 12px; }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .bar { width: 100%; background: linear-gradient(to top, var(--stone), rgba(200,191,176,0.4)); border-radius: 1px 1px 0 0; }
+  .bar-month { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+  .revenue-display { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-top: 1px solid var(--border); }
+  .revenue-label { font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.1em; }
+  .revenue-amount { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--stone); }
+
+  .activity-list { display: flex; flex-direction: column; gap: 14px; }
+  .activity-item { display: flex; gap: 12px; align-items: flex-start; }
+  .activity-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--stone); margin-top: 5px; flex-shrink: 0; }
+  .activity-text { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
+  .activity-time { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
+
+  .quick-actions { display: flex; flex-direction: column; gap: 8px; }
+  .quick-btn { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--glass); border: 1px solid var(--border); border-radius: 2px; color: var(--text-secondary); font-family: 'DM Sans', sans-serif; font-size: 0.8rem; cursor: pointer; text-decoration: none; transition: all 0.2s; letter-spacing: 0.04em; }
+  .quick-btn:hover { background: rgba(255,255,255,0.07); border-color: var(--border-hover); color: white; }
+  .quick-btn .q-icon { font-size: 1rem; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; padding: 24px; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #161616; border: 1px solid var(--border); border-radius: 4px; width: 100%; max-width: 700px; max-height: 85vh; overflow-y: auto; }
+  .modal-header { padding: 32px 36px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; position: sticky; top: 0; background: #161616; z-index: 1; }
+  .modal-eyebrow { font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--stone); margin-bottom: 6px; }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 300; }
+  .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 4px; transition: color 0.2s; }
+  .modal-close:hover { color: white; }
+  .modal-body { padding: 28px 36px; }
+  .modal-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 3px; margin-bottom: 24px; overflow: hidden; }
+  .modal-stat { padding: 18px 20px; background: #161616; }
+  .modal-stat-label { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .modal-stat-value { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 300; color: white; }
+  .seats-bar-wrap { margin-bottom: 24px; }
+  .seats-label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.68rem; color: var(--text-muted); }
+  .seats-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .seats-fill { height: 100%; background: linear-gradient(to right, var(--stone), var(--accent-warm)); border-radius: 2px; transition: width 0.6s ease; }
+  .participants-table { width: 100%; border-collapse: collapse; }
+  .participants-table th { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .participants-table td { padding: 14px; font-size: 0.82rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .participants-table tr:hover td { color: white; background: var(--glass); }
+  .modal-footer-bar { padding: 16px 36px; border-top: 1px solid var(--border); }
+  .btn-export-modal { padding: 10px 22px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: all 0.2s; }
+  .btn-export-modal:hover { border-color: var(--border-hover); color: white; }
+
+  @media (max-width: 900px) {
+    .analytics-row { grid-template-columns: repeat(2, 1fr); }
+    .content-area { grid-template-columns: 1fr; }
+    .side-panel { border-top: 1px solid var(--border); }
+    nav { padding: 16px 24px; }
+    .dashboard-hero { padding: 40px 24px 32px; flex-direction: column; align-items: flex-start; }
+    .events-section { padding: 32px 24px; }
+    .event-card { grid-template-columns: auto 1fr; }
+    .event-registrations, .event-status { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">Event<span>zo</span></a>
+  <div class="nav-right">
+    <div class="nav-greeting">Welcome, <strong>{{ organizer_name }}</strong></div>
+    <ul class="nav-links">
+      <li><a href="/organizer/events">Events</a></li>
+      <li><a href="/organizer/analytics">Analytics</a></li>
+      <li><a href="/organizer/heatmap">Heatmap</a></li>
+    </ul>
+    <a class="btn-logout" href="/logout">Sign out</a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="dashboard-hero">
+    <div class="hero-text">
+      <p class="eyebrow">Organiser Dashboard</p>
+      <h1>Your events,<br><em>beautifully managed</em></h1>
+      <div class="org-badge">🏛 Organisation: <span>{{ org_name }}</span></div>
+    </div>
+    <a class="btn-host" href="/create-event"><span>+</span> Host an Event</a>
+  </div>
+
+  <div class="analytics-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Events</div>
+      <div class="stat-value">{{ total_events }}</div>
+      <div class="stat-sub">All time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Registrations</div>
+      <div class="stat-value">{{ total_regs }}</div>
+      <div class="stat-change">↑ across all events</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Events</div>
+      <div class="stat-value">{{ active_count }}</div>
+      <div class="stat-sub">Currently live</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-value">₹0</div>
+      <div class="stat-sub">Across all events</div>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <div class="events-section">
+      <div class="section-header">
+        <h2 class="section-title">Your Events</h2>
+        <div class="filter-tabs">
+          <button class="tab active" onclick="filterEvents('all', this)">All</button>
+          <button class="tab" onclick="filterEvents('active', this)">Active</button>
+          <button class="tab" onclick="filterEvents('upcoming', this)">Upcoming</button>
+          <button class="tab" onclick="filterEvents('closed', this)">Closed</button>
+        </div>
+      </div>
+      <div class="events-list" id="events-list"></div>
+    </div>
+
+    <div class="side-panel">
+      <div class="panel-section">
+        <h3>Registration Activity</h3>
+        <div class="chart-bars">
+          <div class="bar-wrap"><div class="bar" style="height:20%"></div><span class="bar-month">Oct</span></div>
+          <div class="bar-wrap"><div class="bar" style="height:35%"></div><span class="bar-month">Nov</span></div>
+          <div class="bar-wrap"><div class="bar" style="height:25%"></div><span class="bar-month">Dec</span></div>
+          <div class="bar-wrap"><div class="bar" style="height:50%"></div><span class="bar-month">Jan</span></div>
+          <div class="bar-wrap"><div class="bar" style="height:40%"></div><span class="bar-month">Feb</span></div>
+          <div class="bar-wrap"><div class="bar" style="height:70%"></div><span class="bar-month">Mar</span></div>
+        </div>
+        <div class="revenue-display">
+          <span class="revenue-label">Total registrations</span>
+          <span class="revenue-amount">{{ total_regs }}</span>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Recent Activity</h3>
+        <div class="activity-list">
+          {% if events %}
+            {% for ev in events[:4] %}
+            <div class="activity-item">
+              <div class="activity-dot"></div>
+              <div>
+                <div class="activity-text"><strong style="color:white">{{ ev.title }}</strong> — <span style="color:var(--stone)">{{ ev.registrations }}</span> registered</div>
+                <div class="activity-time">Closes {{ ev.reg_end }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="activity-item">
+              <div class="activity-dot"></div>
+              <div><div class="activity-text">No activity yet. Host your first event.</div></div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Quick Actions</h3>
+        <div class="quick-actions">
+          <a class="quick-btn" href="/create-event"><span class="q-icon">✦</span> Create New Event</a>
+          <a class="quick-btn" href="/organizer/events"><span class="q-icon">◎</span> Manage All Events</a>
+          <a class="quick-btn" href="/organizer/analytics"><span class="q-icon">↗</span> View Analytics</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Participants Modal -->
+<div class="modal-overlay" id="participants-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-eyebrow">Registered Participants</div>
+        <div class="modal-title" id="modal-event-title">Event Name</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-stats">
+        <div class="modal-stat"><div class="modal-stat-label">Total Registered</div><div class="modal-stat-value" id="modal-reg-count">0</div></div>
+        <div class="modal-stat"><div class="modal-stat-label">Max Seats</div><div class="modal-stat-value" id="modal-max-seats">0</div></div>
+        <div class="modal-stat"><div class="modal-stat-label">Seats Left</div><div class="modal-stat-value" id="modal-seats-left">0</div></div>
+      </div>
+      <div class="seats-bar-wrap">
+        <div class="seats-label"><span>Fill rate</span><span id="modal-fill-pct">0%</span></div>
+        <div class="seats-bar"><div class="seats-fill" id="modal-seats-fill" style="width:0%"></div></div>
+      </div>
+      <table class="participants-table">
+        <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Registered At</th></tr></thead>
+        <tbody id="participants-tbody">
+          <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-footer-bar">
+      <button class="btn-export-modal" onclick="exportParticipants()">↓ Export CSV</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── DATA FROM FLASK (THIS IS THE FIX — no more empty array) ──────────────
+  const events = {{ events | tojson }};
+
+  let currentParticipants = [];
+
+  function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function renderEvents(filter = 'all') {
+    const list = document.getElementById('events-list');
+    const filtered = filter === 'all' ? events : events.filter(e => e.status === filter);
+
+    if (filtered.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">◇</div>
+          <p>${filter === 'all'
+            ? 'No events yet.<br>Click <strong>Host an Event</strong> to create your first event.'
+            : 'No ' + filter + ' events found.'}</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(ev => `
+      <div class="event-card" onclick="viewParticipants(${ev.id}, '${escHtml(ev.title)}', ${ev.registrations}, ${ev.max_registrations})">
+        <div class="event-date-block">
+          <div class="event-date-day">${ev.day}</div>
+          <div class="event-date-mon">${ev.month}</div>
+        </div>
+        <div class="event-info">
+          <div class="event-title">${escHtml(ev.title)}</div>
+          <div class="event-meta">
+            <span class="event-tag">${escHtml(ev.type)}</span>
+            <span class="event-mode">${escHtml(ev.mode)}</span>
+            ${ev.location ? `<span class="event-mode">📍 ${escHtml(ev.location)}</span>` : ''}
+          </div>
+        </div>
+        <div class="event-registrations">
+          <div class="reg-count">${ev.registrations}/${ev.max_registrations}</div>
+          <div class="reg-label">Registered</div>
+        </div>
+        <div class="event-status status-${ev.status}">
+          <span class="status-text"><span class="status-dot"></span>${ev.status}</span>
+          <button class="btn-view-participants"
+            onclick="event.stopPropagation(); viewParticipants(${ev.id}, '${escHtml(ev.title)}', ${ev.registrations}, ${ev.max_registrations})">
+            View Participants →
+          </button>
+        </div>
+      </div>`).join('');
+  }
+
+  function filterEvents(filter, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderEvents(filter);
+  }
+
+  function viewParticipants(eventId, title, regCount, maxSeats) {
+    document.getElementById('modal-event-title').textContent  = title;
+    document.getElementById('modal-reg-count').textContent    = regCount;
+    document.getElementById('modal-max-seats').textContent    = maxSeats;
+    document.getElementById('modal-seats-left').textContent   = Math.max(0, maxSeats - regCount);
+    const pct = maxSeats ? Math.round((regCount / maxSeats) * 100) : 0;
+    document.getElementById('modal-fill-pct').textContent     = pct + '%';
+    document.getElementById('modal-seats-fill').style.width   = pct + '%';
+    document.getElementById('participants-tbody').innerHTML    =
+      `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px">Loading…</td></tr>`;
+    document.getElementById('participants-modal').classList.add('active');
+
+    fetch('/api/events/' + eventId + '/participants')
+      .then(r => r.json())
+      .then(data => {
+        currentParticipants = data.participants || [];
+        if (!currentParticipants.length) {
+          document.getElementById('participants-tbody').innerHTML =
+            `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px">No participants registered yet.</td></tr>`;
+          return;
+        }
+        document.getElementById('participants-tbody').innerHTML =
+          currentParticipants.map((p, i) => `
+            <tr>
+              <td style="color:var(--text-muted)">${i + 1}</td>
+              <td>${escHtml(p.name)}</td>
+              <td style="color:var(--text-muted)">${escHtml(p.email)}</td>
+              <td style="color:var(--text-muted)">${escHtml(p.phone)}</td>
+              <td style="color:var(--text-muted)">${(p.registered_at || '').slice(0,16)}</td>
+            </tr>`).join('');
+      })
+      .catch(() => {
+        document.getElementById('participants-tbody').innerHTML =
+          `<tr><td colspan="5" style="text-align:center;color:#a05050;padding:40px">Failed to load. Please try again.</td></tr>`;
+      });
+  }
+
+  function closeModal() {
+    document.getElementById('participants-modal').classList.remove('active');
+    currentParticipants = [];
+  }
+
+  function exportParticipants() {
+    if (!currentParticipants.length) { alert('No participants to export.'); return; }
+    const rows = [['Name','Email','Phone','Registered At']];
+    currentParticipants.forEach(p => rows.push([p.name, p.email, p.phone, p.registered_at || '']));
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv,' + encodeURIComponent(csv);
+    a.download = 'participants.csv'; a.click();
+  }
+
+  document.getElementById('participants-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  renderEvents();
+</script>
+</body>
+</html>

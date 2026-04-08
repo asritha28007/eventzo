@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Eventzo – Participants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --stone: #c8bfb0; --dark-bg: #0d0d0d; --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.18); --text-muted: rgba(255,255,255,0.45);
+    --text-secondary: rgba(255,255,255,0.65); --accent-warm: #d4a96a;
+    --glass: rgba(255,255,255,0.04); --success: #5a8a6a;
+  }
+  html, body { min-height: 100vh; font-family: 'DM Sans', sans-serif; background: var(--dark-bg); color: white; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 18px 48px; background: rgba(13,13,13,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+  .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; letter-spacing: 0.04em; color: white; text-decoration: none; }
+  .nav-logo span { color: var(--stone); }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: var(--text-muted); }
+  .breadcrumb a { color: var(--stone); text-decoration: none; transition: opacity 0.2s; }
+  .breadcrumb a:hover { opacity: 0.75; }
+  .breadcrumb .sep { opacity: 0.3; }
+  .btn-back { padding: 8px 22px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; text-decoration: none; transition: all 0.25s; }
+  .btn-back:hover { border-color: var(--border-hover); color: white; }
+
+  .main { padding-top: 80px; min-height: 100vh; }
+
+  /* Page header */
+  .page-header { padding: 52px 56px 40px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, rgba(200,191,176,0.04) 0%, transparent 60%); }
+  .eyebrow { font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--stone); margin-bottom: 10px; }
+  .page-header h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 300; line-height: 1.1; }
+  .page-header h1 em { font-style: italic; color: var(--stone); }
+
+  /* Stats row */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
+  .stat-card { padding: 28px 36px; border-right: 1px solid var(--border); transition: background 0.25s; }
+  .stat-card:last-child { border-right: none; }
+  .stat-card:hover { background: var(--glass); }
+  .stat-label { font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 300; color: white; line-height: 1; margin-bottom: 4px; }
+  .stat-sub { font-size: 0.7rem; color: var(--text-muted); }
+
+  /* Toolbar */
+  .toolbar { padding: 24px 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .search-input { padding: 10px 16px; background: var(--glass); border: 1px solid var(--border); border-radius: 2px; color: white; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; outline: none; min-width: 240px; transition: border-color 0.2s; }
+  .search-input::placeholder { color: var(--text-muted); }
+  .search-input:focus { border-color: var(--stone); }
+  .btn-export { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: all 0.25s; }
+  .btn-export:hover { border-color: var(--border-hover); color: white; }
+
+  /* Seats progress */
+  .seats-wrap { padding: 20px 56px; border-bottom: 1px solid var(--border); }
+  .seats-label-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.72rem; color: var(--text-muted); }
+  .seats-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .seats-fill { height: 100%; background: linear-gradient(to right, var(--stone), var(--accent-warm)); border-radius: 2px; }
+
+  /* Table */
+  .table-wrap { padding: 0 56px 64px; }
+  .participants-table { width: 100%; border-collapse: collapse; margin-top: 32px; }
+  .participants-table thead th { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .participants-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s; }
+  .participants-table tbody tr:hover { background: var(--glass); }
+  .participants-table tbody td { padding: 18px 16px; font-size: 0.85rem; color: var(--text-secondary); vertical-align: middle; }
+  .td-num { color: var(--text-muted); font-size: 0.78rem; }
+  .td-name { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 400; color: white; }
+  .td-email, .td-phone { color: var(--text-muted); font-size: 0.8rem; }
+  .td-time { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* Empty */
+  .empty-state { text-align: center; padding: 100px 40px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 20px; opacity: 0.3; }
+  .empty-state p { font-size: 0.88rem; line-height: 1.8; }
+
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    .page-header, .toolbar, .seats-wrap, .table-wrap { padding-left: 24px; padding-right: 24px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .participants-table thead th:nth-child(4), .participants-table tbody td:nth-child(4) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">Event<span>zo</span></a>
+  <div class="nav-right">
+    <div class="breadcrumb">
+      <a href="/dashboard/organizer">Dashboard</a>
+      <span class="sep">/</span>
+      <a href="/organizer/events">Events</a>
+      <span class="sep">/</span>
+      <span>Participants</span>
+    </div>
+    <a class="btn-back" href="/organizer/events">← Events</a>
+  </div>
+</nav>
+
+<div class="main">
+
+  <div class="page-header">
+    <p class="eyebrow">Registered Participants</p>
+    <h1>{{ event_title }}<br><em>participant list</em></h1>
+  </div>
+
+  {% set total = participants | length %}
+  {% set max_seats = max_seats if max_seats is defined else 0 %}
+  {% set fill_pct = ((total / max_seats) * 100) | int if max_seats else 0 %}
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Registered</div>
+      <div class="stat-value">{{ total }}</div>
+      <div class="stat-sub">Participants</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Max Capacity</div>
+      <div class="stat-value">{{ max_seats if max_seats else '—' }}</div>
+      <div class="stat-sub">Available seats</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Seats Left</div>
+      <div class="stat-value">{{ [max_seats - total, 0] | max if max_seats else '—' }}</div>
+      <div class="stat-sub">Remaining</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Fill Rate</div>
+      <div class="stat-value">{{ fill_pct }}%</div>
+      <div class="stat-sub">Capacity used</div>
+    </div>
+  </div>
+
+  {% if max_seats %}
+  <div class="seats-wrap">
+    <div class="seats-label-row">
+      <span>Seat fill rate</span>
+      <span>{{ total }} / {{ max_seats }}</span>
+    </div>
+    <div class="seats-bar">
+      <div class="seats-fill" style="width:{{ [fill_pct, 100] | min }}%"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="toolbar">
+    <input class="search-input" type="text" id="search" placeholder="Search by name or email…" oninput="filterTable()">
+    <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+  </div>
+
+  <div class="table-wrap">
+    {% if participants %}
+    <table class="participants-table" id="participants-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Registered At</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        {% for p in participants %}
+        <tr data-name="{{ p.name | lower }}" data-email="{{ p.email | lower }}">
+          <td class="td-num">{{ loop.index }}</td>
+          <td class="td-name">{{ p.name }}</td>
+          <td class="td-email">{{ p.email }}</td>
+          <td class="td-phone">{{ p.phone }}</td>
+          <td class="td-time">{{ p.registered_at[:16] if p.registered_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <div class="icon">◇</div>
+      <p>No one has registered for this event yet.<br>Share your event to attract participants.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+  const participants = {{ participants | tojson }};
+
+  function filterTable() {
+    const q = document.getElementById('search').value.toLowerCase();
+    document.querySelectorAll('#tbody tr').forEach(row => {
+      const match = !q || row.dataset.name.includes(q) || row.dataset.email.includes(q);
+      row.style.display = match ? '' : 'none';
+    });
+  }
+
+  function exportCSV() {
+    if (!participants.length) { alert('No participants to export.'); return; }
+    const rows = [['Name','Email','Phone','Registered At']];
+    participants.forEach(p => rows.push([p.name, p.email, p.phone, p.registered_at || '']));
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv,' + encodeURIComponent(csv);
+    a.download = 'participants_{{ event_title | replace(" ", "_") }}.csv';
+    a.click();
+  }
+</script>
+</body>
+</html>

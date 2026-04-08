@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Eventzo – Manage Events</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --stone: #c8bfb0; --dark-bg: #0d0d0d; --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.2); --text-muted: rgba(255,255,255,0.45);
+    --text-secondary: rgba(255,255,255,0.65); --accent-warm: #d4a96a;
+    --glass: rgba(255,255,255,0.04); --glass-border: rgba(255,255,255,0.1);
+    --success: #5a8a6a; --danger: #a05050;
+  }
+  html, body { min-height: 100vh; font-family: 'DM Sans', sans-serif; background: var(--dark-bg); color: white; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 18px 48px; background: rgba(13,13,13,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+  .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; letter-spacing: 0.04em; color: white; text-decoration: none; }
+  .nav-logo span { color: var(--stone); }
+  .nav-right { display: flex; align-items: center; gap: 32px; }
+  .nav-greeting { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.08em; }
+  .nav-greeting strong { color: var(--stone); font-weight: 500; }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.2s; }
+  .nav-links a:hover, .nav-links a.active { color: white; }
+  .btn-logout { padding: 8px 22px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; text-decoration: none; transition: all 0.25s; }
+  .btn-logout:hover { border-color: var(--border-hover); color: white; }
+
+  .main { padding-top: 80px; min-height: 100vh; }
+
+  /* Page header */
+  .page-header { padding: 48px 56px 36px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; background: linear-gradient(135deg, rgba(200,191,176,0.04) 0%, transparent 60%); }
+  .page-header .eyebrow { font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--stone); margin-bottom: 8px; }
+  .page-header h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 300; line-height: 1.1; }
+  .page-header h1 em { font-style: italic; color: var(--stone); }
+  .btn-new { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; background: white; color: #0d0d0d; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; border-radius: 2px; transition: all 0.25s; flex-shrink: 0; }
+  .btn-new:hover { background: var(--stone); transform: translateY(-2px); }
+
+  /* Toolbar */
+  .toolbar { padding: 24px 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .search-input { padding: 10px 16px; background: var(--glass); border: 1px solid var(--border); border-radius: 2px; color: white; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; outline: none; min-width: 260px; transition: border-color 0.2s; }
+  .search-input::placeholder { color: var(--text-muted); }
+  .search-input:focus { border-color: var(--stone); }
+  .filter-tabs { display: flex; gap: 4px; margin-left: auto; }
+  .tab { padding: 8px 18px; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border: 1px solid transparent; background: transparent; cursor: pointer; border-radius: 2px; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .tab.active { color: white; border-color: var(--border); background: var(--glass); }
+  .tab:hover:not(.active) { color: var(--text-secondary); }
+
+  /* Summary bar */
+  .summary-bar { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
+  .summary-item { padding: 22px 32px; border-right: 1px solid var(--border); }
+  .summary-item:last-child { border-right: none; }
+  .s-label { font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .s-value { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; color: white; }
+
+  /* Events table */
+  .table-wrap { padding: 0 56px 56px; }
+  .events-table { width: 100%; border-collapse: collapse; margin-top: 32px; }
+  .events-table thead th { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .events-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s; cursor: pointer; }
+  .events-table tbody tr:hover { background: var(--glass); }
+  .events-table tbody td { padding: 18px 16px; font-size: 0.85rem; color: var(--text-secondary); vertical-align: middle; }
+
+  .td-title { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 400; color: white; }
+  .td-org { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+  .td-tag { display: inline-block; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); padding: 2px 8px; border: 1px solid var(--border); border-radius: 1px; }
+
+  /* Status badges */
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 10px; border-radius: 1px; }
+  .badge-active { background: rgba(90,138,106,0.12); border: 1px solid rgba(90,138,106,0.3); color: #7ab88a; }
+  .badge-upcoming { background: rgba(212,169,106,0.12); border: 1px solid rgba(212,169,106,0.3); color: var(--accent-warm); }
+  .badge-closed { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text-muted); }
+  .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* Progress mini */
+  .mini-progress { display: flex; flex-direction: column; gap: 4px; min-width: 100px; }
+  .mini-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .mini-fill { height: 100%; background: linear-gradient(to right, var(--stone), var(--accent-warm)); border-radius: 2px; }
+  .mini-label { font-size: 0.7rem; color: var(--text-muted); display: flex; justify-content: space-between; }
+
+  /* Row actions */
+  .row-actions { display: flex; gap: 8px; align-items: center; opacity: 0; transition: opacity 0.2s; }
+  tr:hover .row-actions { opacity: 1; }
+  .action-btn { padding: 6px 14px; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 2px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; border: 1px solid var(--border); background: transparent; color: var(--text-muted); text-decoration: none; }
+  .action-btn:hover { border-color: var(--border-hover); color: white; }
+  .action-btn.danger { border-color: rgba(160,80,80,0.3); color: #c08080; }
+  .action-btn.danger:hover { background: rgba(160,80,80,0.1); border-color: rgba(160,80,80,0.6); color: #e08080; }
+
+  /* Empty */
+  .empty-state { text-align: center; padding: 100px 40px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 20px; opacity: 0.3; }
+  .empty-state p { font-size: 0.9rem; line-height: 1.8; margin-bottom: 24px; }
+  .btn-empty { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: white; color: #0d0d0d; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; border-radius: 2px; transition: all 0.25s; }
+  .btn-empty:hover { background: var(--stone); }
+
+  /* Delete confirm modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .confirm-modal { background: #161616; border: 1px solid var(--border); border-radius: 4px; padding: 40px; max-width: 440px; width: 90%; text-align: center; }
+  .confirm-icon { font-size: 2rem; margin-bottom: 16px; }
+  .confirm-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 300; margin-bottom: 10px; }
+  .confirm-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 28px; }
+  .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+  .btn-cancel-confirm { padding: 12px 24px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: all 0.2s; }
+  .btn-cancel-confirm:hover { color: white; border-color: var(--border-hover); }
+  .btn-confirm-delete { padding: 12px 24px; background: rgba(160,80,80,0.2); border: 1px solid rgba(160,80,80,0.4); color: #e08080; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: all 0.2s; }
+  .btn-confirm-delete:hover { background: rgba(160,80,80,0.35); }
+
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    .page-header, .toolbar, .table-wrap { padding-left: 24px; padding-right: 24px; }
+    .summary-bar { grid-template-columns: repeat(2, 1fr); }
+    .events-table thead th:nth-child(4), .events-table tbody td:nth-child(4) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">Event<span>zo</span></a>
+  <div class="nav-right">
+    <div class="nav-greeting">Welcome, <strong>{{ organizer_name }}</strong></div>
+    <ul class="nav-links">
+      <li><a href="/dashboard/organizer">Dashboard</a></li>
+      <li><a href="/organizer/events" class="active">Events</a></li>
+      <li><a href="/organizer/analytics">Analytics</a></li>
+      <li><a href="/organizer/heatmap">Heatmap</a></li>
+    </ul>
+    <a class="btn-logout" href="/logout">Sign out</a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Event Management</p>
+      <h1>All your events,<br><em>in one place</em></h1>
+    </div>
+    <a class="btn-new" href="/create-event">+ New Event</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-item"><div class="s-label">Total</div><div class="s-value">{{ total_events }}</div></div>
+    <div class="summary-item"><div class="s-label">Active</div><div class="s-value">{{ active_count }}</div></div>
+    <div class="summary-item"><div class="s-label">Upcoming</div><div class="s-value">{{ upcoming_count }}</div></div>
+    <div class="summary-item"><div class="s-label">Registrations</div><div class="s-value">{{ total_regs }}</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input class="search-input" type="text" id="search" placeholder="Search events by title or type…" oninput="filterTable()">
+    <div class="filter-tabs">
+      <button class="tab active" onclick="setFilter('all', this)">All</button>
+      <button class="tab" onclick="setFilter('active', this)">Active</button>
+      <button class="tab" onclick="setFilter('upcoming', this)">Upcoming</button>
+      <button class="tab" onclick="setFilter('closed', this)">Closed</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    {% if events %}
+    <table class="events-table" id="events-table">
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Type / Mode</th>
+          <th>Registration Window</th>
+          <th>Registrations</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        {% for ev in events %}
+        <tr data-status="{{ ev.status }}" data-title="{{ ev.title | lower }}" data-type="{{ ev.type | lower }}">
+          <td>
+            <div class="td-title">{{ ev.title }}</div>
+            <div class="td-org">Reg. ends {{ ev.reg_end }}</div>
+          </td>
+          <td>
+            <span class="td-tag">{{ ev.type }}</span>&nbsp;
+            <span class="td-tag">{{ ev.mode }}</span>
+          </td>
+          <td style="color:var(--text-muted); font-size:0.8rem">
+            {{ ev.reg_start }}<br>
+            <span style="color:rgba(255,255,255,0.25)">→</span>
+            {{ ev.reg_end }}
+          </td>
+          <td>
+            <div class="mini-progress">
+              <div class="mini-label">
+                <span>{{ ev.registrations }} registered</span>
+                <span>{{ ev.max_registrations }} max</span>
+              </div>
+              <div class="mini-bar">
+                <div class="mini-fill" style="width:{{ [((ev.registrations / ev.max_registrations) * 100)|int, 100]|min if ev.max_registrations else 0 }}%"></div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-{{ ev.status }}">
+              <span class="badge-dot"></span>{{ ev.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <a class="action-btn" href="/organizer/event/{{ ev.id }}/participants">Participants</a>
+              <button class="action-btn danger" onclick="confirmDelete({{ ev.id }}, '{{ ev.title | replace("'", "\\'") }}')">Delete</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <div class="icon">◇</div>
+      <p>You haven't created any events yet.<br>Start by hosting your first event.</p>
+      <a class="btn-empty" href="/create-event">+ Host an Event</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="confirm-modal">
+    <div class="confirm-icon">⚠</div>
+    <div class="confirm-title">Delete Event?</div>
+    <div class="confirm-desc" id="confirm-desc">This will permanently delete the event and all its registrations. This action cannot be undone.</div>
+    <div class="confirm-actions">
+      <button class="btn-cancel-confirm" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-confirm-delete" id="confirm-delete-btn">Delete Event</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let activeFilter = 'all';
+  let deleteEventId = null;
+
+  function setFilter(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    filterTable();
+  }
+
+  function filterTable() {
+    const query = document.getElementById('search').value.toLowerCase();
+    const rows  = document.querySelectorAll('#table-body tr');
+    rows.forEach(row => {
+      const statusMatch = activeFilter === 'all' || row.dataset.status === activeFilter;
+      const searchMatch = !query || row.dataset.title.includes(query) || row.dataset.type.includes(query);
+      row.style.display = statusMatch && searchMatch ? '' : 'none';
+    });
+  }
+
+  function confirmDelete(eventId, title) {
+    deleteEventId = eventId;
+    document.getElementById('confirm-desc').textContent =
+      `This will permanently delete "${title}" and all its registrations. This cannot be undone.`;
+    document.getElementById('delete-modal').classList.add('active');
+    document.getElementById('confirm-delete-btn').onclick = doDelete;
+  }
+
+  function doDelete() {
+    if (!deleteEventId) return;
+    fetch('/organizer/event/' + deleteEventId + '/delete', { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          closeDeleteModal();
+          window.location.reload();
+        } else {
+          alert(data.message || 'Delete failed.');
+        }
+      })
+      .catch(() => alert('Network error.'));
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.remove('active');
+    deleteEventId = null;
+  }
+
+  document.getElementById('delete-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+  });
+</script>
+</body>
+</html>
