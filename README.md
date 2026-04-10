@@ -2,7 +2,7 @@
 
 A full-stack event discovery platform built for two kinds of users — people looking for events worth attending, and organisers who want to run them without the hassle.
 
-🔗 **Live Demo:** [eventzo-1.onrender.com](https://eventzo-1.onrender.com/#)
+🔗 **Live:** [eventzo-1.onrender.com](https://eventzo-1.onrender.com/#)
 
 ---
 
